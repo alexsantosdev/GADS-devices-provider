@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get the tag version
-          id: get_tag_version
-          run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/}
+        id: tag
+        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/}
       - name: Test
-          run: echo ${{ steps.get_version.outputs.TAG_VERSION }}
+        run: echo ${{ steps.get_version.outputs.TAG_VERSION }}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
