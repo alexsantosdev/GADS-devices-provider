@@ -2,6 +2,7 @@ on:
   push:
     branches:
       - main
+      - test
     tags:
       - 'v*'
 name: Release provider
@@ -9,12 +10,8 @@ jobs:
   build_and_release:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate build number
-        uses: einaregilsson/build-number@v3
-        with:
-          token: ${{secrets.github_token}}
       - name: Test
-        run: echo $BUILD_NUMBER
+        run: echo ${{ github.ref_name }}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
@@ -33,5 +30,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: device-provider.zip
           asset_name: device-provider.zip
-          tag: ${{ github.ref }}
+          tag: ${{ github.ref_name }}
           overwrite: true
