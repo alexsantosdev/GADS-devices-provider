@@ -59,21 +59,15 @@ func handleRequests() {
 
 func main() {
 	provider_port := flag.String("port", "10001", "The port to run the server on")
-	logs_path := flag.String("logs", "", "The folder where logs will be stored")
-	config_path := flag.String("config", "", "The path to the config.json file")
+	provider_path := flag.String("provider_path", "", "The folder where logs will be stored")
 	flag.Parse()
 
-	err := helpers.ValidateFlags(*provider_port, *logs_path, *config_path)
+	err := helpers.ValidateFlags(*provider_port, *provider_path)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	err = os.MkdirAll(helpers.LogsPath, os.ModePerm)
-	if err != nil {
-		panic("Could not create folder for logging at path: " + helpers.LogsPath)
-	}
-
-	fmt.Printf("Starting provider: \n Port:%v \n Logs at:%v \n Config:%v", helpers.ProviderPort, helpers.LogsPath, helpers.ConfigPath)
+	fmt.Printf("Starting provider: \n Port: %v \n Logs, apps, configs: %v", helpers.ProviderPort, helpers.ProviderPath)
 
 	setLogging()
 	handleRequests()

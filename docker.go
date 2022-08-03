@@ -390,7 +390,7 @@ func CreateIOSContainer(device_udid string) {
 
 	mounts = append(mounts, mount.Mount{
 		Type:   mount.TypeBind,
-		Source: helpers.LogsPath + "/container_" + device_name + "-" + device_udid,
+		Source: helpers.ProviderPath + "/logs/container_" + device_name + "-" + device_udid,
 		Target: "/opt/logs",
 	})
 
@@ -434,7 +434,7 @@ func CreateIOSContainer(device_udid string) {
 	}
 
 	// Create a folder for logging for the container
-	err = os.MkdirAll(helpers.LogsPath+"/container_"+device_name+"-"+device_udid, os.ModePerm)
+	err = os.MkdirAll(helpers.ProviderPath+"/logs/container_"+device_name+"-"+device_udid, os.ModePerm)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "ios_container_create",
@@ -546,7 +546,7 @@ func CreateAndroidContainer(device_udid string) {
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: helpers.LogsPath + "/container_" + device_name + "-" + device_udid,
+			Source: helpers.ProviderPath + "/logs/container_" + device_name + "-" + device_udid,
 			Target: "/opt/logs",
 		},
 		{

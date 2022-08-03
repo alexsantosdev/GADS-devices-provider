@@ -59,19 +59,14 @@ type JsonResponse struct {
 	Message string `json:"message"`
 }
 
-var ProviderPort, LogsPath, ConfigPath string
+var ProviderPort, ProviderPath string
 
-func ValidateFlags(provider_port string, logs_path string, config_path string) error {
+func ValidateFlags(provider_port string, provider_path string) error {
 	ProviderPort = provider_port
-	LogsPath = logs_path
-	ConfigPath = config_path
+	ProviderPath = provider_path
 
-	if LogsPath == "" {
-		return errors.New("Please provide an absolute path flag for the provider logs without a trailing slash. Example: -logs=/home/shamanec/gads-provider")
-	}
-
-	if ConfigPath == "" {
-		return errors.New("Please provide an absolute path to the config.json file. Example: -config=/home/shamanec/config.json")
+	if ProviderPath == "" {
+		return errors.New("Please provide an absolute path for the provider logs/files without a trailing slash. Example: -provider_path=/home/shamanec/gads-provider")
 	}
 
 	return nil
@@ -111,7 +106,7 @@ func SimpleJSONResponse(w http.ResponseWriter, response_message string, code int
 // @Router       /provider-logs [get]
 func GetLogs(w http.ResponseWriter, r *http.Request) {
 	// Create the command string to read the last 1000 lines of provider.log
-	commandString := "tail -n 1000 " + LogsPath + "/provider.log"
+	commandString := "tail -n 1000 " + ProviderPath + "/provider.log"
 
 	// Create the command
 	cmd := exec.Command("bash", "-c", commandString)
@@ -144,7 +139,7 @@ func GetLogs(w http.ResponseWriter, r *http.Request) {
 // Get a ConfigJsonData pointer with the current configuration from config.json
 func GetConfigJsonData() (*ConfigJsonData, error) {
 	var data ConfigJsonData
-	jsonFile, err := os.Open(ConfigPath)
+	jsonFile, err := os.Open(ProviderPath + "/config.json")
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "get_config_data",
