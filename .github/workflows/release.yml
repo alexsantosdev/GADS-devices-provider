@@ -3,18 +3,11 @@ on:
     branches:
       - main
       - test
-    tags:
-      - 'v*'
 name: Release provider
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
     steps:
-      - name: Get the tag version
-        id: tag
-        run: echo ::set-output name=TAG_VERSION::${GITHUB_REF#refs/tags/}
-      - name: Test
-        run: echo ${{ steps.get_version.outputs.TAG_VERSION }}
       - name: Install Go
         uses: actions/setup-go@v2
         with:
@@ -33,5 +26,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: device-provider.zip
           asset_name: device-provider.zip
-          tag: ${{ steps.get_version.outputs.TAG_VERSION }}
+          tag: Latest
           overwrite: true

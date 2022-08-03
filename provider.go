@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/shamanec/GADS-devices-provider/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,11 +24,11 @@ func CreateUdevRules(w http.ResponseWriter, r *http.Request) {
 	// This is to allow curl calls from the udev rules to the GADS server
 	err := CreateUdevRulesInternal()
 	if err != nil {
-		JSONError(w, "create_udev_rules", "Could not create udev rules file", 500)
+		helpers.JSONError(w, "create_udev_rules", "Could not create udev rules file", 500)
 		return
 	}
 
-	SimpleJSONResponse(w, "Successfully created 90-device.rules file in project dir", 200)
+	helpers.SimpleJSONResponse(w, "Successfully created 90-device.rules file in project dir", 200)
 }
 
 //=======================//
@@ -50,7 +51,7 @@ func CreateUdevRulesInternal() error {
 	defer create_container_rules.Close()
 
 	// Get the config data
-	configData, err := GetConfigJsonData()
+	configData, err := helpers.GetConfigJsonData()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "create_udev_rules",
@@ -66,10 +67,10 @@ func CreateUdevRulesInternal() error {
 		rule_line1 := `SUBSYSTEM=="usb", ENV{ID_SERIAL_SHORT}=="` + device.DeviceUDID + `", MODE="0666", SYMLINK+="device_` + device.DeviceUDID + `"`
 
 		// Call provider server with udid when device is removed
-		rule_line2 := `ACTION=="remove", ENV{ID_SERIAL_SHORT}=="` + device.DeviceUDID + `", RUN+="/usr/bin/curl -X POST -H \"Content-Type: application/json\" -d '{\"udid\":\"` + device.DeviceUDID + `\"}' http://localhost:` + *ProviderPort + `/device-containers/remove"`
+		rule_line2 := `ACTION=="remove", ENV{ID_SERIAL_SHORT}=="` + device.DeviceUDID + `", RUN+="/usr/bin/curl -X POST -H \"Content-Type: application/json\" -d '{\"udid\":\"` + device.DeviceUDID + `\"}' http://localhost:` + helpers.ProviderPort + `/device-containers/remove"`
 
 		// Call provider server with udid and device type when device is connected
-		rule_line3 := `ACTION=="add", ENV{ID_SERIAL_SHORT}=="` + device.DeviceUDID + `", RUN+="/usr/bin/curl -X POST -H \"Content-Type: application/json\" -d '{\"device_type\":\"` + device.OS + `\", \"udid\":\"` + device.DeviceUDID + `\"}' http://localhost:` + *ProviderPort + `/device-containers/create"`
+		rule_line3 := `ACTION=="add", ENV{ID_SERIAL_SHORT}=="` + device.DeviceUDID + `", RUN+="/usr/bin/curl -X POST -H \"Content-Type: application/json\" -d '{\"device_type\":\"` + device.OS + `\", \"udid\":\"` + device.DeviceUDID + `\"}' http://localhost:` + helpers.ProviderPort + `/device-containers/create"`
 
 		// Write the new lines for each device in the udev rules file
 		if _, err := create_container_rules.WriteString(rule_line1 + "\n"); err != nil {

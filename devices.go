@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/shamanec/GADS-devices-provider/helpers"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -38,13 +39,13 @@ type DeviceInfo struct {
 func GetAvailableDevicesInfo(w http.ResponseWriter, r *http.Request) {
 	runningContainerNames, err := getRunningDeviceContainerNames()
 	if err != nil {
-		JSONError(w, "get_available_devices", "Could not get available devices", 500)
+		helpers.JSONError(w, "get_available_devices", "Could not get available devices", 500)
 		return
 	}
 
 	devicesInfo, err := getAvailableDevicesInfo(runningContainerNames)
 	if err != nil {
-		JSONError(w, "get_available_devices", "Could not get available devices", 500)
+		helpers.JSONError(w, "get_available_devices", "Could not get available devices", 500)
 		return
 	}
 
@@ -52,9 +53,9 @@ func GetAvailableDevicesInfo(w http.ResponseWriter, r *http.Request) {
 		DevicesInfo: devicesInfo,
 	}
 
-	responseData, err := ConvertToJSONString(info)
+	responseData, err := helpers.ConvertToJSONString(info)
 	if err != nil {
-		JSONError(w, "get_available_devices", "Could not get available devices", 500)
+		helpers.JSONError(w, "get_available_devices", "Could not get available devices", 500)
 		return
 	}
 	fmt.Fprintf(w, responseData)
@@ -66,7 +67,7 @@ func GetAvailableDevicesInfo(w http.ResponseWriter, r *http.Request) {
 func getAvailableDevicesInfo(runningContainers []string) ([]DeviceInfo, error) {
 	var combinedInfo []DeviceInfo
 
-	configData, err := GetConfigJsonData()
+	configData, err := helpers.GetConfigJsonData()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "get_available_devices_info",
@@ -133,16 +134,16 @@ func getRunningDeviceContainerNames() ([]string, error) {
 	return containerNames, nil
 }
 
-func getDeviceInfo(device_udid string, configData *ConfigJsonData) (*DeviceInfo, error) {
+func getDeviceInfo(device_udid string, configData *helpers.ConfigJsonData) (*DeviceInfo, error) {
 	// Loop through the device configs and find the one that corresponds to the provided device UDID
-	var deviceConfig DeviceConfig
+	var deviceConfig helpers.DeviceConfig
 	for _, v := range configData.DeviceConfig {
 		if v.DeviceUDID == device_udid {
 			deviceConfig = v
 		}
 	}
 
-	if deviceConfig == (DeviceConfig{}) {
+	if deviceConfig == (helpers.DeviceConfig{}) {
 		log.WithFields(log.Fields{
 			"event": "get_device_info_from_config",
 		}).Error("Device with udid " + device_udid + " was not found in config data.")

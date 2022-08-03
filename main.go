@@ -7,6 +7,7 @@ import (
 	"os"
 
 	_ "github.com/shamanec/GADS-devices-provider/docs"
+	"github.com/shamanec/GADS-devices-provider/helpers"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -14,13 +15,10 @@ import (
 )
 
 var project_log_file *os.File
-var ProviderPort = flag.String("port", "10001", "The port to run the server on")
-var LogsPath = flag.String("logs", "./", "The folder where logs will be stored")
-var ConfigPath = flag.String("config", "./configs/config.json", "The path to the config.json file")
 
 func setLogging() {
 	log.SetFormatter(&log.JSONFormatter{})
-	project_log_file, err := os.OpenFile(*LogsPath+"provider.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
+	project_log_file, err := os.OpenFile(helpers.LogsPath+"/provider.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
 	if err != nil {
 		panic("Could not set log output" + err.Error())
 	}
@@ -53,15 +51,29 @@ func handleRequests() {
 	router.HandleFunc("/containers/{container_id}/remove", RemoveContainer).Methods("POST")
 	router.HandleFunc("/containers/{container_id}/logs", GetContainerLogs).Methods("GET")
 	router.HandleFunc("/configuration/create-udev-rules", CreateUdevRules).Methods("POST")
-	router.HandleFunc("/provider-logs", GetLogs)
+	router.HandleFunc("/provider-logs", helpers.GetLogs)
 	router.HandleFunc("/device-containers", GetDeviceContainers).Methods("GET")
 
-	log.Fatal(http.ListenAndServe(":"+*ProviderPort, originHandler(router)))
+	log.Fatal(http.ListenAndServe(":"+helpers.ProviderPort, originHandler(router)))
 }
 
 func main() {
+	provider_port := flag.String("port", "10001", "The port to run the server on")
+	logs_path := flag.String("logs", "", "The folder where logs will be stored")
+	config_path := flag.String("config", "", "The path to the config.json file")
 	flag.Parse()
-	fmt.Printf("Starting provider on port:%v, keeping logs at:%v, using config.json at:%v", *ProviderPort, *LogsPath, *ConfigPath)
+
+	err := helpers.ValidateFlags(*provider_port, *logs_path, *config_path)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	err = os.MkdirAll(helpers.LogsPath, os.ModePerm)
+	if err != nil {
+		panic("Could not create folder for logging at path: " + helpers.LogsPath)
+	}
+
+	fmt.Printf("Starting provider: \n Port:%v \n Logs at:%v \n Config:%v", helpers.ProviderPort, helpers.LogsPath, helpers.ConfigPath)
 
 	setLogging()
 	handleRequests()

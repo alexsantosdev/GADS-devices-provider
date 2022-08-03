@@ -19,11 +19,11 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/gorilla/mux"
+	"github.com/shamanec/GADS-devices-provider/helpers"
 	log "github.com/sirupsen/logrus"
 )
 
 var project_dir, _ = os.Getwd()
-var on_grid = GetEnvValue("connect_selenium_grid")
 
 type CreateDeviceContainerRequest struct {
 	DeviceType string `json:"device_type"`
@@ -57,11 +57,11 @@ func RestartContainer(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "docker_container_restart",
 		}).Error("Restarting container with ID: " + container_id + " failed.")
-		JSONError(w, "docker_container_restart", "Could not restart container with ID: "+container_id, 500)
+		helpers.JSONError(w, "docker_container_restart", "Could not restart container with ID: "+container_id, 500)
 		return
 	}
 
-	SimpleJSONResponse(w, "Successfully attempted to restart container with ID: "+container_id, 200)
+	helpers.SimpleJSONResponse(w, "Successfully attempted to restart container with ID: "+container_id, 200)
 }
 
 // @Summary      Remove container for device
@@ -74,7 +74,7 @@ func RemoveDeviceContainer(w http.ResponseWriter, r *http.Request) {
 	var data RemoveDeviceContainerData
 
 	// Read the request data
-	err := UnmarshalReader(r.Body, &data)
+	err := helpers.UnmarshalReader(r.Body, &data)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "device_container_remove",
@@ -112,7 +112,7 @@ func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "get_container_logs",
 		}).Error("Could not create docker client while attempting to get logs for container with ID: " + container_id + ". Error: " + err.Error())
-		JSONError(w, "get_container_logs", "Could not get logs for container with ID: "+container_id, 500)
+		helpers.JSONError(w, "get_container_logs", "Could not get logs for container with ID: "+container_id, 500)
 		return
 	}
 
@@ -125,7 +125,7 @@ func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "get_container_logs",
 		}).Error("Could not get logs for container with ID: " + container_id + ". Error: " + err.Error())
-		JSONError(w, "get_container_logs", "Could not get logs for container with ID: "+container_id, 500)
+		helpers.JSONError(w, "get_container_logs", "Could not get logs for container with ID: "+container_id, 500)
 		return
 	}
 
@@ -138,9 +138,9 @@ func GetContainerLogs(w http.ResponseWriter, r *http.Request) {
 	// If there are any logs - reply with them
 	// Or reply with a generic string
 	if newStr != "" {
-		SimpleJSONResponse(w, newStr, 200)
+		helpers.SimpleJSONResponse(w, newStr, 200)
 	} else {
-		SimpleJSONResponse(w, "There are no existing logs for this container.", 200)
+		helpers.SimpleJSONResponse(w, "There are no existing logs for this container.", 200)
 	}
 }
 
@@ -154,7 +154,7 @@ func CreateDeviceContainer(w http.ResponseWriter, r *http.Request) {
 	var data CreateDeviceContainerRequest
 
 	// Read the request data
-	err := UnmarshalReader(r.Body, &data)
+	err := helpers.UnmarshalReader(r.Body, &data)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "device_container_create",
@@ -213,7 +213,7 @@ func RemoveContainer(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "docker_container_remove",
 		}).Error("Could not create docker client while attempting to remove container with ID: " + key + ". Error: " + err.Error())
-		JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
+		helpers.JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
 		return
 	}
 
@@ -222,7 +222,7 @@ func RemoveContainer(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "docker_container_remove",
 		}).Error("Could not stop container with ID: " + key + ". Error: " + err.Error())
-		JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
+		helpers.JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
 		return
 	}
 
@@ -231,14 +231,14 @@ func RemoveContainer(w http.ResponseWriter, r *http.Request) {
 		log.WithFields(log.Fields{
 			"event": "docker_container_remove",
 		}).Error("Could not remove container with ID: " + key + ". Error: " + err.Error())
-		JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
+		helpers.JSONError(w, "docker_container_remove", "Could not remove container with ID: "+key, 500)
 		return
 	}
 
 	log.WithFields(log.Fields{
 		"event": "docker_container_remove",
 	}).Info("Successfully removed container with ID: " + key)
-	SimpleJSONResponse(w, "Successfully removed container with ID: "+key, 200)
+	helpers.SimpleJSONResponse(w, "Successfully removed container with ID: "+key, 200)
 }
 
 // @Summary      Refresh the device-containers data
@@ -279,7 +279,7 @@ func CreateIOSContainer(device_udid string) {
 	time.Sleep(2 * time.Second)
 
 	// Get the config data
-	configData, err := GetConfigJsonData()
+	configData, err := helpers.GetConfigJsonData()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "ios_container_create",
@@ -288,7 +288,7 @@ func CreateIOSContainer(device_udid string) {
 	}
 
 	// Check if device is registered in config data
-	var deviceConfig DeviceConfig
+	var deviceConfig helpers.DeviceConfig
 	for _, v := range configData.DeviceConfig {
 		if v.DeviceUDID == device_udid {
 			deviceConfig = v
@@ -296,7 +296,7 @@ func CreateIOSContainer(device_udid string) {
 	}
 
 	// Stop execution if device not in config data
-	if deviceConfig == (DeviceConfig{}) {
+	if deviceConfig == (helpers.DeviceConfig{}) {
 		log.WithFields(log.Fields{
 			"event": "ios_container_create",
 		}).Error("Device with UDID:" + device_udid + " is not registered in the 'config.json' file. No container will be created.")
@@ -338,7 +338,7 @@ func CreateIOSContainer(device_udid string) {
 			nat.Port(wda_mjpeg_port):        struct{}{},
 			nat.Port(container_server_port): struct{}{},
 		},
-		Env: []string{"ON_GRID=" + on_grid,
+		Env: []string{"ON_GRID=" + helpers.GetEnvValue("connect_selenium_grid"),
 			"APPIUM_PORT=" + appium_port,
 			"DEVICE_UDID=" + device_udid,
 			"WDA_PORT=" + wda_port,
@@ -346,7 +346,7 @@ func CreateIOSContainer(device_udid string) {
 			"DEVICE_OS_VERSION=" + device_os_version,
 			"DEVICE_NAME=" + device_name,
 			"WDA_BUNDLEID=" + wda_bundle_id,
-			"SUPERVISION_PASSWORD=" + GetEnvValue("supervision_password"),
+			"SUPERVISION_PASSWORD=" + helpers.GetEnvValue("supervision_password"),
 			"SELENIUM_HUB_PORT=" + selenium_hub_port,
 			"SELENIUM_HUB_HOST=" + selenium_hub_host,
 			"DEVICES_HOST=" + devices_host,
@@ -390,7 +390,7 @@ func CreateIOSContainer(device_udid string) {
 
 	mounts = append(mounts, mount.Mount{
 		Type:   mount.TypeBind,
-		Source: *LogsPath + "logs/container_" + device_name + "-" + device_udid,
+		Source: helpers.LogsPath + "/container_" + device_name + "-" + device_udid,
 		Target: "/opt/logs",
 	})
 
@@ -434,7 +434,7 @@ func CreateIOSContainer(device_udid string) {
 	}
 
 	// Create a folder for logging for the container
-	err = os.MkdirAll(*LogsPath+"container_"+device_name+"-"+device_udid, os.ModePerm)
+	err = os.MkdirAll(helpers.LogsPath+"/container_"+device_name+"-"+device_udid, os.ModePerm)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "ios_container_create",
@@ -473,7 +473,7 @@ func CreateAndroidContainer(device_udid string) {
 	}).Info("Attempting to create a container for Android device with udid: " + device_udid)
 
 	// Get the config data
-	configData, err := GetConfigJsonData()
+	configData, err := helpers.GetConfigJsonData()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "android_container_create",
@@ -482,7 +482,7 @@ func CreateAndroidContainer(device_udid string) {
 	}
 
 	// Check if device is registered in config data
-	var deviceConfig DeviceConfig
+	var deviceConfig helpers.DeviceConfig
 	for _, v := range configData.DeviceConfig {
 		if v.DeviceUDID == device_udid {
 			deviceConfig = v
@@ -490,7 +490,7 @@ func CreateAndroidContainer(device_udid string) {
 	}
 
 	// Stop execution if device not in config data
-	if deviceConfig == (DeviceConfig{}) {
+	if deviceConfig == (helpers.DeviceConfig{}) {
 		log.WithFields(log.Fields{
 			"event": "android_container_create",
 		}).Error("Device with UDID:" + device_udid + " is not registered in the 'config.json' file. No container will be created.")
@@ -526,7 +526,7 @@ func CreateAndroidContainer(device_udid string) {
 			nat.Port("4723"):                struct{}{},
 			nat.Port(container_server_port): struct{}{},
 		},
-		Env: []string{"ON_GRID=" + on_grid,
+		Env: []string{"ON_GRID=" + helpers.GetEnvValue("connect_selenium_grid"),
 			"APPIUM_PORT=" + appium_port,
 			"DEVICE_UDID=" + device_udid,
 			"DEVICE_OS_VERSION=" + device_os_version,
@@ -546,7 +546,7 @@ func CreateAndroidContainer(device_udid string) {
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
-			Source: *LogsPath + "container_" + device_name + "-" + device_udid,
+			Source: helpers.LogsPath + "/container_" + device_name + "-" + device_udid,
 			Target: "/opt/logs",
 		},
 		{
@@ -606,7 +606,7 @@ func CreateAndroidContainer(device_udid string) {
 	}
 
 	// Create a folder for logging for the container
-	err = os.MkdirAll(*LogsPath+"container_"+device_name+"-"+device_udid, os.ModePerm)
+	err = os.MkdirAll(helpers.LogsPath+"/container_"+device_name+"-"+device_udid, os.ModePerm)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"event": "android_container_create",
@@ -758,7 +758,7 @@ func GetDeviceContainers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json, err := ConvertToJSONString(deviceContainers)
+	json, err := helpers.ConvertToJSONString(deviceContainers)
 
 	fmt.Fprintf(w, json)
 }
